@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request, Response
+from fastapi import APIRouter, BackgroundTasks, Request, Response
 from sqlalchemy import func, select
 
 from app.config import settings
@@ -10,6 +10,7 @@ from app.redis_conn import rate_limit
 from app.schemas.auth import LoginIn, PasswordChangeIn, SignupIn, UserOut
 from app.services import auth_service as auth
 from app.services.audit import audit
+from app.services.notify import send_signup_notification
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -27,7 +28,7 @@ def _set_session_cookie(response: Response, token: str) -> None:
 
 
 @router.post("/signup", status_code=201)
-def signup(body: SignupIn, request: Request, db: DB):
+def signup(body: SignupIn, request: Request, db: DB, background_tasks: BackgroundTasks):
     ip = client_ip(request)
     rate_limit("signup", ip or "-", limit=10, window_seconds=3600)
     if not (body.agree_terms and body.agree_privacy):
@@ -47,6 +48,10 @@ def signup(body: SignupIn, request: Request, db: DB):
     db.flush()
     audit(db, "user.signup", actor_id=user.id, target_type="user", target_id=user.id, ip=ip)
     db.commit()
+    # 응답을 보낸 뒤 발송 — SMTP가 느리거나 실패해도 가입은 그대로 성공한다.
+    background_tasks.add_task(
+        send_signup_notification, str(user.id), user.email, user.name, user.signup_note, user.created_at
+    )
     return {"status": "pending", "message": "가입 신청이 완료되었습니다. 관리자 승인 후 이용할 수 있습니다."}
 
 

@@ -53,6 +53,15 @@ class Settings(BaseSettings):
     upscale_half: bool = False
     models_dir: str = "/app/models_weights"
 
+    # 회원가입 시 승인 요청 메일 (비워두면 발송 안 함). Gmail이면 앱 비밀번호를 쓴다.
+    # 메일 속 관리자 페이지 링크는 frontend_origin 기준으로 만든다.
+    admin_notify_emails: str = ""  # 쉼표로 여러 명
+    smtp_host: str = "smtp.gmail.com"
+    smtp_port: int = 587  # 587=STARTTLS, 465=SSL
+    smtp_user: str = ""
+    smtp_password: str = ""
+    smtp_from: str = ""  # 비우면 smtp_user
+
     @property
     def is_production(self) -> bool:
         return self.app_env == "production"
@@ -60,6 +69,10 @@ class Settings(BaseSettings):
     @property
     def max_upload_bytes(self) -> int:
         return self.max_upload_mb * 1024 * 1024
+
+    @property
+    def admin_notify_email_list(self) -> list[str]:
+        return [e.strip() for e in self.admin_notify_emails.split(",") if e.strip()]
 
     @property
     def origins(self) -> set[str]:
