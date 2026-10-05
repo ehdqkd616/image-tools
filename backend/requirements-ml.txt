@@ -1,0 +1,5 @@
+# torch/torchvision은 Dockerfile에서 TORCH_INDEX 인덱스로 설치 (버전은 Dockerfile ARG)
+spandrel==0.4.2
+numpy==2.5.2
+einops==0.8.2
+safetensors==0.8.0

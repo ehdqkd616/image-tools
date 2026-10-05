@@ -1,0 +1,12 @@
+[
+  {"id": "instagram_square", "group": "SNS", "label": "인스타그램 정사각형", "width": 1080, "height": 1080},
+  {"id": "instagram_portrait", "group": "SNS", "label": "인스타그램 세로", "width": 1080, "height": 1350},
+  {"id": "instagram_story", "group": "SNS", "label": "인스타그램·릴스 스토리", "width": 1080, "height": 1920},
+  {"id": "youtube_thumbnail", "group": "SNS", "label": "유튜브 썸네일", "width": 1280, "height": 720},
+  {"id": "facebook_post", "group": "SNS", "label": "페이스북 게시물", "width": 1200, "height": 630},
+  {"id": "x_post", "group": "SNS", "label": "X(트위터) 게시물", "width": 1600, "height": 900},
+  {"id": "profile", "group": "프로필", "label": "프로필 사진", "width": 400, "height": 400},
+  {"id": "fhd", "group": "화면", "label": "FHD", "width": 1920, "height": 1080},
+  {"id": "qhd", "group": "화면", "label": "QHD", "width": 2560, "height": 1440},
+  {"id": "uhd", "group": "화면", "label": "4K UHD", "width": 3840, "height": 2160}
+]

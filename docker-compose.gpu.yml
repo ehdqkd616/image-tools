@@ -1,0 +1,25 @@
+# Real-ESRGAN 업스케일 워커 (NVIDIA GPU)
+#   1) 모델 받기:  python3 backend/scripts/download_models.py
+#   2) 실행:      docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d --build
+# GPU 없이 CPU로 돌리려면 TORCH_INDEX=cpu, UPSCALE_DEVICE=cpu 로 바꾸고 deploy 블록을 지운다.
+services:
+  worker:
+    build:
+      context: ./backend
+      target: ml
+      args:
+        TORCH_INDEX: ${TORCH_INDEX:-cu126}
+    image: image-studio-worker-ml
+    environment:
+      UPSCALE_ENGINE: realesrgan
+      UPSCALE_DEVICE: ${UPSCALE_DEVICE:-cuda}
+    volumes:
+      - storage:/data/storage
+      - ./backend/models_weights:/app/models_weights:ro
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
