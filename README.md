@@ -1,5 +1,7 @@
 # 이미지 스튜디오
 
+> 🔗 **배포 주소:** https://image-tools.hotgarlic.dedyn.io
+
 사진 업로드 → **해상도 높이기(AI 업스케일) / 크기 조절 / 용량 줄이기**를 제공하는 회원 승인제 반응형 웹 서비스.
 명세: [image-studio-guide.md](image-studio-guide.md) · 구현 결정: [docs/decisions.md](docs/decisions.md)
 
