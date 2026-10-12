@@ -42,16 +42,16 @@ def _token_hash(token: str) -> str:
 
 # --- 로그인 시도 제한 ---------------------------------------------------------
 
-def _fail_keys(email: str, ip: str | None) -> list[str]:
-    keys = [f"loginfail:email:{email}"]
+def _fail_keys(username: str, ip: str | None) -> list[str]:
+    keys = [f"loginfail:username:{username}"]
     if ip:
         keys.append(f"loginfail:ip:{ip}")
     return keys
 
 
-def check_login_locked(email: str, ip: str | None) -> None:
+def check_login_locked(username: str, ip: str | None) -> None:
     r = get_redis()
-    for key in _fail_keys(email, ip):
+    for key in _fail_keys(username, ip):
         count = int(r.get(key) or 0)
         if count >= settings.login_max_failures:
             ttl = max(r.ttl(key), 1)
@@ -63,16 +63,16 @@ def check_login_locked(email: str, ip: str | None) -> None:
             )
 
 
-def record_login_failure(email: str, ip: str | None) -> None:
+def record_login_failure(username: str, ip: str | None) -> None:
     r = get_redis()
-    for key in _fail_keys(email, ip):
+    for key in _fail_keys(username, ip):
         count = r.incr(key)
         if count == 1:
             r.expire(key, settings.login_lock_minutes * 60)
 
 
-def clear_login_failures(email: str) -> None:
-    get_redis().delete(f"loginfail:email:{email}")
+def clear_login_failures(username: str) -> None:
+    get_redis().delete(f"loginfail:username:{username}")
 
 
 # --- 세션 ---------------------------------------------------------------------

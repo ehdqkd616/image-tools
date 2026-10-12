@@ -49,7 +49,7 @@ export function UserActions({ user, onReject }: { user: AdminUser; onReject: (u:
         </button>
       )}
       {user.status === "approved" && (
-        <button className="btn-secondary btn-sm" disabled={act.isPending} onClick={() => run("suspend", `${user.email} 회원을 정지할까요? 즉시 로그아웃됩니다.`)}>
+        <button className="btn-secondary btn-sm" disabled={act.isPending} onClick={() => run("suspend", `${user.username} 회원을 정지할까요? 즉시 로그아웃됩니다.`)}>
           정지
         </button>
       )}
@@ -70,7 +70,7 @@ export function RejectModal({ user, onClose }: { user: AdminUser | null; onClose
   });
   return (
     <Modal open={!!user} onClose={onClose} title="가입 거절">
-      <p className="mb-3 text-sm text-slate-600">{user?.email} 회원의 가입을 거절합니다. 사유는 로그인 시 회원에게 표시됩니다.</p>
+      <p className="mb-3 text-sm text-slate-600">{user?.username} 회원의 가입을 거절합니다. 사유는 로그인 시 회원에게 표시됩니다.</p>
       <textarea className="input py-2" rows={3} placeholder="거절 사유 (선택)" value={reason} onChange={(e) => setReason(e.target.value)} maxLength={1000} />
       <div className="mt-4 flex justify-end gap-2">
         <button className="btn-ghost" onClick={onClose}>
@@ -137,7 +137,7 @@ export function AdminUsers() {
             </button>
           ))}
         </div>
-        <input type="search" className="input sm:ml-auto sm:max-w-xs" placeholder="이메일·이름 검색" value={q} onChange={(e) => (setQ(e.target.value), setPage(1))} aria-label="회원 검색" />
+        <input type="search" className="input sm:ml-auto sm:max-w-xs" placeholder="아이디·이름 검색" value={q} onChange={(e) => (setQ(e.target.value), setPage(1))} aria-label="회원 검색" />
       </div>
 
       {selectable && items.length > 0 && (
@@ -179,12 +179,12 @@ export function AdminUsers() {
                   <tr key={u.id} className={cx(selected.has(u.id) && "bg-brand-50")}>
                     {selectable && (
                       <td className="p-3">
-                        <input type="checkbox" className="size-4 accent-brand-600" checked={selected.has(u.id)} onChange={() => toggle(u.id)} aria-label={`${u.email} 선택`} />
+                        <input type="checkbox" className="size-4 accent-brand-600" checked={selected.has(u.id)} onChange={() => toggle(u.id)} aria-label={`${u.username} 선택`} />
                       </td>
                     )}
                     <td className="p-3">
                       <Link to={`/admin/users/${u.id}`} className="font-medium hover:underline">
-                        {u.email}
+                        {u.username}
                       </Link>
                       <div className="text-xs text-slate-500">{u.name}</div>
                       {u.signup_note && <div className="mt-1 line-clamp-2 max-w-xs text-xs text-slate-500">목적: {u.signup_note}</div>}
@@ -210,11 +210,11 @@ export function AdminUsers() {
             {items.map((u) => (
               <li key={u.id} className={cx("card p-4", selected.has(u.id) && "ring-2 ring-brand-500")}>
                 <div className="flex items-start gap-3">
-                  {selectable && <input type="checkbox" className="mt-1 size-5 accent-brand-600" checked={selected.has(u.id)} onChange={() => toggle(u.id)} aria-label={`${u.email} 선택`} />}
+                  {selectable && <input type="checkbox" className="mt-1 size-5 accent-brand-600" checked={selected.has(u.id)} onChange={() => toggle(u.id)} aria-label={`${u.username} 선택`} />}
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <Link to={`/admin/users/${u.id}`} className="truncate font-medium hover:underline">
-                        {u.email}
+                        {u.username}
                       </Link>
                       <UserStatusBadge status={u.status} />
                     </div>

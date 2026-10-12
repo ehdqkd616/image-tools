@@ -153,7 +153,7 @@ export function JobDetailPage() {
         <h1 className="mt-2 text-xl font-bold break-all">{inp.original_filename}</h1>
         <p className="text-sm text-slate-500">
           {formatDate(job.created_at)}
-          {job.user && !owner && <span> · {job.user.email}</span>}
+          {job.user && !owner && <span> · {job.user.username}</span>}
         </p>
       </div>
 

@@ -4,7 +4,7 @@ export type UserStatus = "pending" | "approved" | "rejected" | "suspended";
 
 export interface User {
   id: string;
-  email: string;
+  username: string;
   name: string;
   role: "user" | "admin";
   status: UserStatus;
@@ -99,7 +99,7 @@ export interface Job {
   finished_at: string | null;
   deleted_at: string | null;
   queue_position: number | null;
-  user: { id: string; email: string; name: string } | null;
+  user: { id: string; username: string; name: string } | null;
 }
 
 export interface JobDetail extends Job {

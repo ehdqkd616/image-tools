@@ -151,7 +151,7 @@ export function JobCard({
         )}
         <div className="mt-1 text-xs text-slate-400">
           {formatDate(job.created_at)}
-          {showUser && job.user && <span className="ml-2 text-slate-500">· {job.user.email}</span>}
+          {showUser && job.user && <span className="ml-2 text-slate-500">· {job.user.username}</span>}
         </div>
       </div>
     </div>

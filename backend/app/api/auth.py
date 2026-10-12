@@ -31,16 +31,13 @@ def _set_session_cookie(response: Response, token: str) -> None:
 def signup(body: SignupIn, request: Request, db: DB, background_tasks: BackgroundTasks):
     ip = client_ip(request)
     rate_limit("signup", ip or "-", limit=10, window_seconds=3600)
-    if not (body.agree_terms and body.agree_privacy):
-        raise AppError("VALIDATION_ERROR", "이용약관과 개인정보 처리방침에 동의해 주세요.", 422)
-    email = body.email.lower()
-    if db.scalar(select(User.id).where(func.lower(User.email) == email)):
-        raise AppError("EMAIL_TAKEN", "이미 가입된 이메일입니다.", 409)
+    username = body.username.lower()
+    if db.scalar(select(User.id).where(func.lower(User.username) == username)):
+        raise AppError("USERNAME_TAKEN", "이미 사용 중인 아이디입니다.", 409)
     user = User(
-        email=email,
+        username=username,
         password_hash=auth.hash_password(body.password),
         name=body.name,
-        signup_note=(body.signup_note or "").strip() or None,
         role="user",
         status="pending",
     )
@@ -50,7 +47,7 @@ def signup(body: SignupIn, request: Request, db: DB, background_tasks: Backgroun
     db.commit()
     # 응답을 보낸 뒤 발송 — SMTP가 느리거나 실패해도 가입은 그대로 성공한다.
     background_tasks.add_task(
-        send_signup_notification, str(user.id), user.email, user.name, user.signup_note, user.created_at
+        send_signup_notification, str(user.id), user.username, user.name, user.signup_note, user.created_at
     )
     return {"status": "pending", "message": "가입 신청이 완료되었습니다. 관리자 승인 후 이용할 수 있습니다."}
 
@@ -58,19 +55,19 @@ def signup(body: SignupIn, request: Request, db: DB, background_tasks: Backgroun
 @router.post("/login", response_model=UserOut)
 def login(body: LoginIn, request: Request, response: Response, db: DB):
     ip = client_ip(request)
-    email = body.email.lower()
+    username = body.username.lower()
     rate_limit("login", ip or "-", limit=30, window_seconds=60)
-    auth.check_login_locked(email, ip)
+    auth.check_login_locked(username, ip)
 
-    user = db.scalar(select(User).where(func.lower(User.email) == email))
+    user = db.scalar(select(User).where(func.lower(User.username) == username))
     if not auth.verify_password(user.password_hash if user else None, body.password):
-        auth.record_login_failure(email, ip)
+        auth.record_login_failure(username, ip)
         audit(db, "login.failure", actor_id=user.id if user else None, target_type="user",
-              target_id=user.id if user else None, detail={"email": email}, ip=ip)
+              target_id=user.id if user else None, detail={"username": username}, ip=ip)
         db.commit()
-        raise AppError("INVALID_CREDENTIALS", "이메일 또는 비밀번호가 올바르지 않습니다.", 401)
+        raise AppError("INVALID_CREDENTIALS", "아이디 또는 비밀번호가 올바르지 않습니다.", 401)
 
-    auth.clear_login_failures(email)
+    auth.clear_login_failures(username)
     # 비밀번호가 맞을 때만 계정 상태를 알려준다
     if user.status != "approved":
         code, message = auth.STATUS_ERRORS[user.status]

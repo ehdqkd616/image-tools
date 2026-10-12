@@ -5,39 +5,36 @@ from app.tests.conftest import PASSWORD, login, make_user, new_client
 
 def test_signup_creates_pending_user(client):
     res = client.post("/api/auth/signup", json={
-        "email": "New@Example.com", "password": "abcd1234", "name": "새회원",
-        "signup_note": "블로그용", "agree_terms": True, "agree_privacy": True,
+        "username": "NewUser", "password": "abcd1234", "name": "새회원",
     })
     assert res.status_code == 201
-    res = login(client, "new@example.com", "abcd1234")
+    res = login(client, "newuser", "abcd1234")
     assert res.status_code == 403
     assert res.json()["error"]["code"] == "ACCOUNT_PENDING"
 
 
-@pytest.mark.parametrize("password", ["short1", "onlyletters", "12345678"])
+@pytest.mark.parametrize("password", ["short1", "1234567"])
 def test_signup_password_rules(client, password):
-    res = client.post("/api/auth/signup", json={
-        "email": "a@example.com", "password": password, "name": "a",
-        "agree_terms": True, "agree_privacy": True,
-    })
+    res = client.post("/api/auth/signup", json={"username": "abc", "password": password, "name": "a"})
     assert res.status_code == 422
 
 
-def test_signup_requires_agreement(client):
-    res = client.post("/api/auth/signup", json={
-        "email": "a@example.com", "password": "abcd1234", "name": "a",
-        "agree_terms": True, "agree_privacy": False,
-    })
+@pytest.mark.parametrize("username", ["ab", "a@example.com", "한글아이디", "x" * 33])
+def test_signup_username_rules(client, username):
+    res = client.post("/api/auth/signup", json={"username": username, "password": "abcd1234", "name": "a"})
     assert res.status_code == 422
 
 
-def test_signup_duplicate_email(client):
-    make_user("dup@example.com")
-    res = client.post("/api/auth/signup", json={
-        "email": "DUP@example.com", "password": "abcd1234", "name": "a",
-        "agree_terms": True, "agree_privacy": True,
-    })
+def test_signup_duplicate_username(client):
+    make_user("dup")
+    res = client.post("/api/auth/signup", json={"username": "DUP", "password": "abcd1234", "name": "a"})
     assert res.status_code == 409
+    assert res.json()["error"]["code"] == "USERNAME_TAKEN"
+
+
+def test_legacy_email_username_can_login(client):
+    make_user("old@example.com")
+    assert login(client, "old@example.com").status_code == 200
 
 
 @pytest.mark.parametrize("status,code", [
@@ -68,7 +65,7 @@ def test_login_approved_success_and_me(client):
     assert "httponly" in cookie and "samesite=strict" in cookie
     me = client.get("/api/auth/me")
     assert me.status_code == 200
-    assert me.json()["email"] == "ok@example.com"
+    assert me.json()["username"] == "ok@example.com"
 
 
 def test_unauthenticated_requests_rejected(client):
@@ -116,4 +113,17 @@ def test_csrf_origin_check(user_client):
     assert res.status_code == 403
     c = new_client()
     c.headers.pop("Origin")
-    assert c.post("/api/auth/login", json={"email": "x@example.com", "password": "x"}).status_code == 403
+    assert c.post("/api/auth/login", json={"username": "x@example.com", "password": "x"}).status_code == 403
+
+
+def test_sync_admin_creates_and_resets_password(db):
+    from app.cli import sync_admin
+
+    assert sync_admin(db, "firstpass1") == "cli.admin.create"
+    c = new_client()
+    me = login(c, "admin", "firstpass1")
+    assert me.status_code == 200 and me.json()["role"] == "admin"
+
+    sync_admin(db, "secondpass2")  # .env 값이 바뀌면 비밀번호도 따라간다
+    assert login(new_client(), "admin", "firstpass1").status_code == 401
+    assert login(new_client(), "admin", "secondpass2").status_code == 200

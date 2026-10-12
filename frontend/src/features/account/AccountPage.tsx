@@ -38,8 +38,8 @@ export function AccountPage() {
 
       <section className="card p-5">
         <dl className="grid grid-cols-[6rem_1fr] gap-y-2 text-sm">
-          <dt className="text-slate-500">이메일</dt>
-          <dd className="break-all">{me.email}</dd>
+          <dt className="text-slate-500">아이디</dt>
+          <dd className="break-all">{me.username}</dd>
           <dt className="text-slate-500">이름</dt>
           <dd>{me.name}</dd>
           <dt className="text-slate-500">가입일</dt>

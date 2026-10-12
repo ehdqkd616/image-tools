@@ -1,4 +1,5 @@
 import logging
+from contextlib import asynccontextmanager
 from urllib.parse import urlsplit
 
 from fastapi import FastAPI, Request
@@ -10,8 +11,32 @@ from app.errors import install_error_handlers
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 
+
+def _sync_admin_account() -> None:
+    """ADMIN_PASSWORD(.env)가 있으면 공통 관리자 계정 admin을 만들거나 비밀번호를 맞춘다."""
+    if not settings.admin_password:
+        return
+    from sqlalchemy.exc import IntegrityError
+
+    from app.cli import sync_admin
+    from app.db import SessionLocal
+
+    with SessionLocal() as db:
+        try:
+            sync_admin(db, settings.admin_password)
+        except IntegrityError:  # 다른 워커가 동시에 만든 경우
+            db.rollback()
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    _sync_admin_account()
+    yield
+
+
 app = FastAPI(
     title="Image Studio API",
+    lifespan=lifespan,
     docs_url=None if settings.is_production else "/api/docs",
     redoc_url=None,
     openapi_url=None if settings.is_production else "/api/openapi.json",

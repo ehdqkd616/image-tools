@@ -2,26 +2,35 @@ import re
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+
+# 아이디: 영문/숫자/_/- 3~32자 (모든 프로젝트 공통 규칙)
+USERNAME_RE = re.compile(r"^[A-Za-z0-9_-]{3,32}$")
 
 
 def _check_password(v: str) -> str:
-    if len(v) < 8 or not re.search(r"[A-Za-z]", v) or not re.search(r"\d", v):
-        raise ValueError("비밀번호는 8자 이상이며 영문과 숫자를 모두 포함해야 합니다.")
+    if len(v) < 8:
+        raise ValueError("비밀번호는 8자 이상이어야 합니다.")
     if len(v) > 128:
         raise ValueError("비밀번호가 너무 깁니다.")
     return v
 
 
 class SignupIn(BaseModel):
-    email: EmailStr
+    username: str
     password: str
     name: str = Field(min_length=1, max_length=50)
-    signup_note: str | None = Field(default=None, max_length=1000)
-    agree_terms: bool
-    agree_privacy: bool
 
     _pw = field_validator("password")(_check_password)
+
+    @field_validator("username")
+    @classmethod
+    def _check_username(cls, v: str) -> str:
+        v = v.strip()
+        if not USERNAME_RE.match(v):
+            raise ValueError("아이디는 영문, 숫자, _, - 조합 3~32자여야 합니다.")
+        return v
 
     @field_validator("name")
     @classmethod
@@ -33,7 +42,7 @@ class SignupIn(BaseModel):
 
 
 class LoginIn(BaseModel):
-    email: EmailStr
+    username: str = Field(min_length=1, max_length=320)
     password: str = Field(max_length=128)
 
 
@@ -48,7 +57,7 @@ class UserOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: uuid.UUID
-    email: str
+    username: str
     name: str
     role: str
     status: str

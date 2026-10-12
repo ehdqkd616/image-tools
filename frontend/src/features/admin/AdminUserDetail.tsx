@@ -53,7 +53,7 @@ export function AdminUserDetail() {
           ← 회원 목록
         </Link>
         <div className="mt-2 flex flex-wrap items-center gap-2">
-          <h1 className="text-xl font-bold break-all">{user.email}</h1>
+          <h1 className="text-xl font-bold break-all">{user.username}</h1>
           <UserStatusBadge status={user.status} />
           {user.role === "admin" && <span className="badge bg-slate-900 text-white">관리자</span>}
         </div>

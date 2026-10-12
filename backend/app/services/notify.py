@@ -43,8 +43,8 @@ def _row(label: str, value: str, last: bool = False) -> str:
             </td></tr>"""
 
 
-def _signup_html(email: str, name: str, note: str | None, signed_up_at: str, admin_url: str) -> str:
-    e, n, t, url = html.escape(email), html.escape(name), html.escape(signed_up_at), html.escape(admin_url, quote=True)
+def _signup_html(username: str, name: str, note: str | None, signed_up_at: str, admin_url: str) -> str:
+    e, n, t, url = html.escape(username), html.escape(name), html.escape(signed_up_at), html.escape(admin_url, quote=True)
     rows = [_row("아이디", e), _row("이름", n), _row("가입 일시 (한국 시간)", t, last=not note)]
     if note:
         rows.append(_row("가입 메모", html.escape(note), last=True))
@@ -103,11 +103,11 @@ def _signup_html(email: str, name: str, note: str | None, signed_up_at: str, adm
 </html>"""
 
 
-def _signup_text(email: str, name: str, note: str | None, signed_up_at: str, admin_url: str) -> str:
+def _signup_text(username: str, name: str, note: str | None, signed_up_at: str, admin_url: str) -> str:
     lines = [
         f"[{APP_NAME}] 새 회원가입 승인 요청",
         "",
-        f"아이디: {email}",
+        f"아이디: {username}",
         f"이름: {name}",
         f"가입 일시: {signed_up_at} (한국 시간)",
     ]
@@ -118,7 +118,7 @@ def _signup_text(email: str, name: str, note: str | None, signed_up_at: str, adm
 
 
 def build_signup_message(
-    user_id: str, email: str, name: str, note: str | None, created_at: datetime
+    user_id: str, username: str, name: str, note: str | None, created_at: datetime
 ) -> EmailMessage | None:
     recipients = settings.admin_notify_email_list
     if not recipients:
@@ -129,22 +129,22 @@ def build_signup_message(
     admin_url = f"{settings.frontend_origin.rstrip('/')}/admin/users/{user_id}"
 
     msg = EmailMessage()
-    msg["Subject"] = f"[{APP_NAME}] {name}({email}) 님이 가입했어요 — 승인해 주세요"
+    msg["Subject"] = f"[{APP_NAME}] {name}({username}) 님이 가입했어요 — 승인해 주세요"
     msg["From"] = formataddr((f"{APP_NAME} 알림", settings.smtp_from or settings.smtp_user))
     msg["To"] = ", ".join(recipients)
     msg["Message-ID"] = make_msgid(domain="image-tools.local")
-    msg.set_content(_signup_text(email, name, note, signed_up_at, admin_url))
-    msg.add_alternative(_signup_html(email, name, note, signed_up_at, admin_url), subtype="html")
+    msg.set_content(_signup_text(username, name, note, signed_up_at, admin_url))
+    msg.add_alternative(_signup_html(username, name, note, signed_up_at, admin_url), subtype="html")
     return msg
 
 
 def send_signup_notification(
-    user_id: str, email: str, name: str, note: str | None, created_at: datetime
+    user_id: str, username: str, name: str, note: str | None, created_at: datetime
 ) -> None:
     if not (settings.smtp_user and settings.smtp_password):
-        log.warning("SMTP 설정이 없어 가입 알림 메일을 건너뜁니다 (%s)", email)
+        log.warning("SMTP 설정이 없어 가입 알림 메일을 건너뜁니다 (%s)", username)
         return
-    msg = build_signup_message(user_id, email, name, note, created_at)
+    msg = build_signup_message(user_id, username, name, note, created_at)
     if msg is None:
         return
 
@@ -159,6 +159,6 @@ def send_signup_notification(
                 smtp.starttls(context=context)
                 smtp.login(settings.smtp_user, settings.smtp_password)
                 smtp.send_message(msg)
-        log.info("가입 알림 메일 발송: %s -> %s", email, msg["To"])
+        log.info("가입 알림 메일 발송: %s -> %s", username, msg["To"])
     except Exception:
-        log.exception("가입 알림 메일 발송 실패 (%s)", email)
+        log.exception("가입 알림 메일 발송 실패 (%s)", username)

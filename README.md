@@ -10,8 +10,10 @@
 ```bash
 cp .env.example .env
 docker compose up -d --build
-docker compose exec api python -m app.cli create-admin --email admin@example.com --name 관리자
 ```
+
+`.env`의 `ADMIN_PASSWORD`를 채워두면 api가 시작할 때 관리자 계정(아이디 `admin`)이 자동으로 만들어집니다.
+(수동으로 하려면 `docker compose exec api python -m app.cli create-admin`)
 
 브라우저에서 http://localhost:8088 (포트는 `.env`의 `WEB_PORT`).
 회원가입 → 관리자 계정으로 **관리자 > 회원 관리**에서 승인 → 로그인.

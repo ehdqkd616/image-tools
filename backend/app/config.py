@@ -53,6 +53,9 @@ class Settings(BaseSettings):
     upscale_half: bool = False
     models_dir: str = "/app/models_weights"
 
+    # 공통 관리자 계정 admin의 비밀번호. api가 시작할 때마다 이 값으로 만들거나 맞춘다.
+    admin_password: str = ""
+
     # 회원가입 시 승인 요청 메일 (비워두면 발송 안 함). Gmail이면 앱 비밀번호를 쓴다.
     # 메일 속 관리자 페이지 링크는 frontend_origin 기준으로 만든다.
     admin_notify_emails: str = ""  # 쉼표로 여러 명

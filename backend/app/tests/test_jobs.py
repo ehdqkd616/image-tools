@@ -116,7 +116,7 @@ def test_quota_exceeded_blocks_jobs(user_client):
     with SessionLocal() as s:
         from app.models import User
 
-        s.execute(update(User).where(User.email == "user@example.com").values(storage_quota_bytes=10))
+        s.execute(update(User).where(User.username == "user@example.com").values(storage_quota_bytes=10))
         s.commit()
     res = user_client.post("/api/jobs", json={"tool": "resize", "params": {"mode": "percent", "percent": 50},
                                               "asset_ids": [asset["id"]]})

@@ -17,11 +17,11 @@ export function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const from = (location.state as { from?: string; signedUp?: boolean } | null)?.from ?? "/";
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
   const login = useMutation({
-    mutationFn: () => api<User>("/auth/login", { method: "POST", body: { email, password } }),
+    mutationFn: () => api<User>("/auth/login", { method: "POST", body: { username, password } }),
     onSuccess: (user) => {
       qc.setQueryData(["me"], user);
       navigate(from, { replace: true });
@@ -39,10 +39,10 @@ export function LoginPage() {
       <h1 className="mb-6 text-xl font-bold">로그인</h1>
       <form className="space-y-4" onSubmit={submit}>
         <div>
-          <label className="label" htmlFor="email">
-            이메일
+          <label className="label" htmlFor="username">
+            아이디
           </label>
-          <input id="email" type="email" autoComplete="email" required className="input" value={email} onChange={(e) => setEmail(e.target.value)} />
+          <input id="username" type="text" autoComplete="username" autoCapitalize="none" required className="input" value={username} onChange={(e) => setUsername(e.target.value)} />
         </div>
         <div>
           <label className="label" htmlFor="password">
@@ -72,11 +72,13 @@ export function LoginPage() {
   );
 }
 
-const PW_RULE = /^(?=.*[A-Za-z])(?=.*\d).{8,128}$/;
+const PW_RULE = /^.{8,128}$/;
+// 아이디: 영문/숫자/_/- 3~32자 (모든 프로젝트 공통 규칙)
+const USERNAME_RULE = /^[A-Za-z0-9_-]{3,32}$/;
 
 export function SignupPage() {
   const navigate = useNavigate();
-  const [form, setForm] = useState({ email: "", password: "", password2: "", name: "", signup_note: "", agree_terms: false, agree_privacy: false });
+  const [form, setForm] = useState({ username: "", password: "", password2: "", name: "" });
   const set = (patch: Partial<typeof form>) => setForm((f) => ({ ...f, ...patch }));
   const [localError, setLocalError] = useState<string | null>(null);
 
@@ -85,12 +87,9 @@ export function SignupPage() {
       api("/auth/signup", {
         method: "POST",
         body: {
-          email: form.email,
+          username: form.username.trim(),
           password: form.password,
           name: form.name,
-          signup_note: form.signup_note || null,
-          agree_terms: form.agree_terms,
-          agree_privacy: form.agree_privacy,
         },
       }),
     onSuccess: () => navigate("/signup/done", { replace: true }),
@@ -98,9 +97,9 @@ export function SignupPage() {
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
-    if (!PW_RULE.test(form.password)) return setLocalError("비밀번호는 8자 이상이며 영문과 숫자를 모두 포함해야 합니다.");
+    if (!USERNAME_RULE.test(form.username.trim())) return setLocalError("아이디는 영문, 숫자, _, - 조합 3~32자여야 합니다.");
+    if (!PW_RULE.test(form.password)) return setLocalError("비밀번호는 8자 이상이어야 합니다.");
     if (form.password !== form.password2) return setLocalError("비밀번호 확인이 일치하지 않습니다.");
-    if (!form.agree_terms || !form.agree_privacy) return setLocalError("이용약관과 개인정보 처리방침에 동의해 주세요.");
     setLocalError(null);
     signup.mutate();
   };
@@ -112,17 +111,18 @@ export function SignupPage() {
       <p className="mb-6 text-sm text-slate-500">가입 신청 후 관리자 승인을 받으면 이용할 수 있습니다.</p>
       <form className="space-y-4" onSubmit={submit} noValidate>
         <div>
-          <label className="label" htmlFor="su-email">
-            이메일 (아이디)
+          <label className="label" htmlFor="su-username">
+            아이디
           </label>
-          <input id="su-email" type="email" autoComplete="email" required className="input" value={form.email} onChange={(e) => set({ email: e.target.value })} />
+          <input id="su-username" type="text" autoComplete="username" autoCapitalize="none" required maxLength={32} className="input" value={form.username} onChange={(e) => set({ username: e.target.value })} />
+          <p className="mt-1 text-xs text-slate-500">영문, 숫자, _, - 조합 3~32자</p>
         </div>
         <div>
           <label className="label" htmlFor="su-pw">
             비밀번호
           </label>
           <input id="su-pw" type="password" autoComplete="new-password" required className="input" value={form.password} onChange={(e) => set({ password: e.target.value })} />
-          <p className="mt-1 text-xs text-slate-500">8자 이상, 영문과 숫자를 모두 포함</p>
+          <p className="mt-1 text-xs text-slate-500">8자 이상</p>
         </div>
         <div>
           <label className="label" htmlFor="su-pw2">
@@ -135,35 +135,6 @@ export function SignupPage() {
             이름 / 닉네임
           </label>
           <input id="su-name" required maxLength={50} className="input" value={form.name} onChange={(e) => set({ name: e.target.value })} />
-        </div>
-        <div>
-          <label className="label" htmlFor="su-note">
-            가입 목적 <span className="font-normal text-slate-400">(선택)</span>
-          </label>
-          <textarea id="su-note" rows={3} maxLength={1000} className="input py-2" placeholder="관리자 승인에 참고합니다." value={form.signup_note} onChange={(e) => set({ signup_note: e.target.value })} />
-        </div>
-        <div className="space-y-2 rounded-lg bg-slate-50 p-3 text-sm">
-          <label className="flex min-h-11 items-center gap-3">
-            <input type="checkbox" className="size-5 accent-brand-600" checked={form.agree_terms} onChange={(e) => set({ agree_terms: e.target.checked })} />
-            <span>
-              <Link to="/terms" target="_blank" className="font-medium text-brand-600 underline">
-                이용약관
-              </Link>
-              에 동의합니다 (필수)
-            </span>
-          </label>
-          <label className="flex min-h-11 items-center gap-3">
-            <input type="checkbox" className="size-5 accent-brand-600" checked={form.agree_privacy} onChange={(e) => set({ agree_privacy: e.target.checked })} />
-            <span>
-              <Link to="/privacy" target="_blank" className="font-medium text-brand-600 underline">
-                개인정보 처리방침
-              </Link>
-              에 동의합니다 (필수)
-            </span>
-          </label>
-          <p className="pl-8 text-xs text-slate-500">
-            서비스 운영·문제 해결을 위해 관리자가 회원이 올린 이미지와 작업 기록을 열람할 수 있으며, 열람 기록은 모두 남습니다.
-          </p>
         </div>
         {error && (
           <div role="alert" className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -245,7 +216,7 @@ export function PrivacyPage() {
   return (
     <LegalPage title="개인정보 처리방침">
       <h2>1. 수집하는 정보</h2>
-      <p>이메일, 이름(닉네임), 비밀번호(암호화 저장), 가입 목적(선택), 접속 기록(IP, 브라우저 정보, 로그인 시각), 올린 이미지와 처리 결과, 작업 기록.</p>
+      <p>아이디, 이름(닉네임), 비밀번호(암호화 저장), 접속 기록(IP, 브라우저 정보, 로그인 시각), 올린 이미지와 처리 결과, 작업 기록.</p>
       <h2>2. 이용 목적</h2>
       <p>회원 식별과 가입 승인, 이미지 처리 서비스 제공, 부정 이용 방지, 문제 해결과 서비스 개선.</p>
       <h2>3. 관리자의 이미지 열람</h2>

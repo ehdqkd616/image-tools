@@ -46,7 +46,7 @@ function Filters({ value, onChange, withUser }: { value: JobFilters; onChange: (
       <input
         type="search"
         className="input col-span-2 md:col-span-1"
-        placeholder={withUser ? "회원 이메일·이름" : "파일명 검색"}
+        placeholder={withUser ? "회원 아이디·이름" : "파일명 검색"}
         value={withUser ? (value.user ?? "") : value.q}
         onChange={(e) => set(withUser ? { user: e.target.value } : { q: e.target.value })}
         aria-label="검색"
