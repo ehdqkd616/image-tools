@@ -56,7 +56,7 @@ export function AppLayout() {
                   cx("rounded-lg px-3 py-2 text-sm font-medium", isActive ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-100")
                 }
               >
-                관리 페이지
+                관리자 페이지
               </NavLink>
             )}
             <NavLink
@@ -66,7 +66,7 @@ export function AppLayout() {
               title="내 정보"
             >
               <IconUser className="size-5 sm:mr-1.5 sm:size-4" />
-              <span className="hidden max-w-32 truncate sm:inline">{me?.name}</span>
+              <span className="hidden sm:inline">내 정보</span>
             </NavLink>
             <button
               className="hidden min-h-11 rounded-lg px-3 text-sm text-slate-500 hover:bg-slate-100 md:block"
