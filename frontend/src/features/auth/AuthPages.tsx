@@ -17,11 +17,11 @@ export function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const from = (location.state as { from?: string; signedUp?: boolean } | null)?.from ?? "/";
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
   const login = useMutation({
-    mutationFn: () => api<User>("/auth/login", { method: "POST", body: { email, password } }),
+    mutationFn: () => api<User>("/auth/login", { method: "POST", body: { username, password } }),
     onSuccess: (user) => {
       qc.setQueryData(["me"], user);
       navigate(from, { replace: true });
@@ -39,10 +39,10 @@ export function LoginPage() {
       <h1 className="mb-6 text-xl font-bold">로그인</h1>
       <form className="space-y-4" onSubmit={submit}>
         <div>
-          <label className="label" htmlFor="email">
-            이메일
+          <label className="label" htmlFor="username">
+            아이디
           </label>
-          <input id="email" type="email" autoComplete="email" required className="input" value={email} onChange={(e) => setEmail(e.target.value)} />
+          <input id="username" autoComplete="username" autoCapitalize="none" spellCheck={false} required className="input" value={username} onChange={(e) => setUsername(e.target.value)} />
         </div>
         <div>
           <label className="label" htmlFor="password">
@@ -76,7 +76,7 @@ const PW_RULE = /^(?=.*[A-Za-z])(?=.*\d).{8,128}$/;
 
 export function SignupPage() {
   const navigate = useNavigate();
-  const [form, setForm] = useState({ email: "", password: "", password2: "", name: "", signup_note: "", agree_terms: false, agree_privacy: false });
+  const [form, setForm] = useState({ username: "", password: "", password2: "", name: "", signup_note: "", agree_terms: false, agree_privacy: false });
   const set = (patch: Partial<typeof form>) => setForm((f) => ({ ...f, ...patch }));
   const [localError, setLocalError] = useState<string | null>(null);
 
@@ -85,7 +85,7 @@ export function SignupPage() {
       api("/auth/signup", {
         method: "POST",
         body: {
-          email: form.email,
+          username: form.username,
           password: form.password,
           name: form.name,
           signup_note: form.signup_note || null,
@@ -112,10 +112,12 @@ export function SignupPage() {
       <p className="mb-6 text-sm text-slate-500">가입 신청 후 관리자 승인을 받으면 이용할 수 있습니다.</p>
       <form className="space-y-4" onSubmit={submit} noValidate>
         <div>
-          <label className="label" htmlFor="su-email">
-            이메일 (아이디)
+          <label className="label" htmlFor="su-username">
+            아이디
           </label>
-          <input id="su-email" type="email" autoComplete="email" required className="input" value={form.email} onChange={(e) => set({ email: e.target.value })} />
+          <input id="su-username" autoComplete="username" autoCapitalize="none" spellCheck={false} required maxLength={20} className="input"
+            value={form.username} onChange={(e) => set({ username: e.target.value.toLowerCase() })} />
+          <p className="mt-1 text-xs text-slate-500">영문 소문자로 시작하는 4~20자 영문·숫자</p>
         </div>
         <div>
           <label className="label" htmlFor="su-pw">
@@ -245,7 +247,7 @@ export function PrivacyPage() {
   return (
     <LegalPage title="개인정보 처리방침">
       <h2>1. 수집하는 정보</h2>
-      <p>이메일, 이름(닉네임), 비밀번호(암호화 저장), 가입 목적(선택), 접속 기록(IP, 브라우저 정보, 로그인 시각), 올린 이미지와 처리 결과, 작업 기록.</p>
+      <p>아이디, 이름(닉네임), 비밀번호(암호화 저장), 가입 목적(선택), 접속 기록(IP, 브라우저 정보, 로그인 시각), 올린 이미지와 처리 결과, 작업 기록.</p>
       <h2>2. 이용 목적</h2>
       <p>회원 식별과 가입 승인, 이미지 처리 서비스 제공, 부정 이용 방지, 문제 해결과 서비스 개선.</p>
       <h2>3. 관리자의 이미지 열람</h2>

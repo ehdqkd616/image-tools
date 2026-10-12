@@ -54,7 +54,7 @@ def test_admin_sees_user_jobs(admin_client, user_client):
     jobs = admin_client.get(f"/api/admin/users/{users[0]['id']}/jobs").json()
     assert jobs["total"] == 1
     all_jobs = admin_client.get("/api/admin/jobs").json()
-    assert all_jobs["items"][0]["user"]["email"] == "user@example.com"
+    assert all_jobs["items"][0]["user"]["username"] == "user@example.com"
     stats = admin_client.get("/api/admin/stats").json()
     assert stats["jobs_today"] == 1
 

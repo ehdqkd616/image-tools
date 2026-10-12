@@ -6,7 +6,9 @@ from fastapi.responses import JSONResponse
 
 from app.api import admin, assets, auth, jobs
 from app.config import settings
+from app.db import SessionLocal
 from app.errors import install_error_handlers
+from app.services.auth_service import ensure_admin
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 
@@ -45,6 +47,14 @@ async def origin_check(request: Request, call_next):
 
 for router in (auth.router, assets.router, jobs.router, admin.router):
     app.include_router(router, prefix="/api")
+
+
+@app.on_event("startup")
+def _sync_admin() -> None:
+    with SessionLocal() as db:
+        result = ensure_admin(db)
+    if result:
+        logging.getLogger("app").info("관리자 계정 %s: %s", "생성" if result == "created" else "동기화", settings.admin_username)
 
 
 @app.get("/api/health")

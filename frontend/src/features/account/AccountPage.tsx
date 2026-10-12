@@ -38,8 +38,8 @@ export function AccountPage() {
 
       <section className="card p-5">
         <dl className="grid grid-cols-[6rem_1fr] gap-y-2 text-sm">
-          <dt className="text-slate-500">이메일</dt>
-          <dd className="break-all">{me.email}</dd>
+          <dt className="text-slate-500">아이디</dt>
+          <dd className="break-all">{me.username}</dd>
           <dt className="text-slate-500">이름</dt>
           <dd>{me.name}</dd>
           <dt className="text-slate-500">가입일</dt>
@@ -52,6 +52,9 @@ export function AccountPage() {
         </div>
       </section>
 
+      {me.password_managed ? (
+        <section className="card p-5 text-sm text-slate-500">관리자 비밀번호는 서버 .env의 ADMIN_PASSWORD로 관리합니다.</section>
+      ) : (
       <section className="card p-5">
         <h2 className="mb-4 font-bold">비밀번호 변경</h2>
         <form className="space-y-3" onSubmit={submit}>
@@ -65,6 +68,7 @@ export function AccountPage() {
           </button>
         </form>
       </section>
+      )}
 
       <button className="btn-secondary w-full" onClick={() => logout.mutate(undefined, { onSettled: () => navigate("/login") })}>
         로그아웃

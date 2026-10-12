@@ -66,9 +66,10 @@ def db():
         yield s
 
 
-def make_user(email="user@example.com", status="approved", role="user", quota_bytes=None) -> User:
+# 테스트 회원 아이디 일부는 이메일 형태 — 이메일로 가입했던 기존 회원과 같은 경우
+def make_user(username="user@example.com", status="approved", role="user", quota_bytes=None) -> User:
     with SessionLocal() as s:
-        user = User(email=email, name=email.split("@")[0], password_hash=hash_password(PASSWORD),
+        user = User(username=username, name=username.split("@")[0], password_hash=hash_password(PASSWORD),
                     status=status, role=role)
         if quota_bytes is not None:
             user.storage_quota_bytes = quota_bytes
@@ -82,8 +83,8 @@ def new_client() -> TestClient:
     return TestClient(app, base_url="http://testserver", headers={"Origin": "http://testserver"})
 
 
-def login(client: TestClient, email: str, password: str = PASSWORD):
-    return client.post("/api/auth/login", json={"email": email, "password": password})
+def login(client: TestClient, username: str, password: str = PASSWORD):
+    return client.post("/api/auth/login", json={"username": username, "password": password})
 
 
 @pytest.fixture

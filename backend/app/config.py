@@ -55,6 +55,9 @@ class Settings(BaseSettings):
 
     # 회원가입 시 승인 요청 메일 (비워두면 발송 안 함). Gmail이면 앱 비밀번호를 쓴다.
     # 메일 속 관리자 페이지 링크는 frontend_origin 기준으로 만든다.
+    # 관리자 계정 — 모든 프로젝트 공통 admin. 기동할 때마다 이 비밀번호로 맞춘다(.env가 기준)
+    admin_username: str = "admin"
+    admin_password: str = ""
     admin_notify_emails: str = ""  # 쉼표로 여러 명
     smtp_host: str = "smtp.gmail.com"
     smtp_port: int = 587  # 587=STARTTLS, 465=SSL

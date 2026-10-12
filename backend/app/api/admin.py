@@ -78,7 +78,7 @@ def list_users(admin: AdminUser, db: DB, status: str | None = None, q: str | Non
     if status:
         stmt = stmt.where(User.status == status)
     if q:
-        stmt = stmt.where(or_(User.email.ilike(f"%{q}%"), User.name.ilike(f"%{q}%")))
+        stmt = stmt.where(or_(User.username.ilike(f"%{q}%"), User.name.ilike(f"%{q}%")))
     total = db.scalar(select(func.count()).select_from(stmt.subquery())) or 0
     users = db.scalars(stmt.order_by(User.created_at.desc()).offset((page - 1) * page_size).limit(page_size)).all()
     counts = dict(db.execute(
@@ -102,7 +102,7 @@ def get_user(user_id: uuid.UUID, admin: AdminUser, db: DB):
     job_count = db.scalar(select(func.count()).select_from(Job)
                           .where(Job.user_id == user.id, Job.deleted_at.is_(None))) or 0
     history = db.execute(
-        select(AuditLog, User.email)
+        select(AuditLog, User.username)
         .outerjoin(User, User.id == AuditLog.actor_id)
         .where(AuditLog.target_type == "user", AuditLog.target_id == str(user.id),
                AuditLog.action.like("admin.user.%") | (AuditLog.action == "user.signup"))
@@ -111,7 +111,7 @@ def get_user(user_id: uuid.UUID, admin: AdminUser, db: DB):
     ).all()
     return {
         "user": _user_out(user, job_count),
-        "history": [_log_out(log, email) for log, email in history],
+        "history": [_log_out(log, actor) for log, actor in history],
     }
 
 
@@ -221,6 +221,8 @@ def temp_password(user_id: uuid.UUID, request: Request, admin: AdminUser, db: DB
     user = _get_user(db, user_id)
     if user.id == admin.id:
         raise AppError("INVALID_STATE", "본인 비밀번호는 내 정보에서 변경하세요.", 409)
+    if auth_service.is_managed_admin(user):
+        raise AppError("INVALID_STATE", "관리자 비밀번호는 서버 .env의 ADMIN_PASSWORD로 관리합니다.", 409)
     alphabet = string.ascii_letters + string.digits
     while True:
         pw = "".join(secrets.choice(alphabet) for _ in range(12))
@@ -253,7 +255,7 @@ def all_jobs(admin: AdminUser, db: DB, user: str | None = None, tool: str | None
     stmt = select(Job)
     if user:
         stmt = stmt.join(User, User.id == Job.user_id).where(
-            or_(User.email.ilike(f"%{user}%"), User.name.ilike(f"%{user}%"))
+            or_(User.username.ilike(f"%{user}%"), User.name.ilike(f"%{user}%"))
         )
     stmt = job_filters(stmt, tool=tool, status=status, date_from=date_from, date_to=date_to, q=q,
                        include_deleted=True)
@@ -270,11 +272,11 @@ def admin_job(job_id: uuid.UUID, admin: AdminUser, db: DB):
 
 # --- 감사 로그 ------------------------------------------------------------------
 
-def _log_out(log: AuditLog, actor_email: str | None) -> dict:
+def _log_out(log: AuditLog, actor_username: str | None) -> dict:
     return {
         "id": log.id,
         "actor_id": log.actor_id,
-        "actor_email": actor_email,
+        "actor_username": actor_username,
         "action": log.action,
         "target_type": log.target_type,
         "target_id": log.target_id,
@@ -289,11 +291,11 @@ def audit_logs(admin: AdminUser, db: DB, action: str | None = None, actor: str |
                target_id: str | None = None, date_from: date | None = None, date_to: date | None = None,
                page: int = 1, page_size: int = 50):
     page, page_size = paginate(page, page_size)
-    stmt = select(AuditLog, User.email).outerjoin(User, User.id == AuditLog.actor_id)
+    stmt = select(AuditLog, User.username).outerjoin(User, User.id == AuditLog.actor_id)
     if action:
         stmt = stmt.where(AuditLog.action.like(f"{action}%"))
     if actor:
-        stmt = stmt.where(User.email.ilike(f"%{actor}%"))
+        stmt = stmt.where(User.username.ilike(f"%{actor}%"))
     if target_id:
         stmt = stmt.where(AuditLog.target_id == target_id)
     if date_from:
@@ -303,5 +305,5 @@ def audit_logs(admin: AdminUser, db: DB, action: str | None = None, actor: str |
                                                                  timezone.utc))
     total = db.scalar(select(func.count()).select_from(stmt.subquery())) or 0
     rows = db.execute(stmt.order_by(AuditLog.id.desc()).offset((page - 1) * page_size).limit(page_size)).all()
-    return {"items": [_log_out(log, email) for log, email in rows], "total": total, "page": page,
+    return {"items": [_log_out(log, actor) for log, actor in rows], "total": total, "page": page,
             "page_size": page_size}

@@ -4,12 +4,14 @@ export type UserStatus = "pending" | "approved" | "rejected" | "suspended";
 
 export interface User {
   id: string;
-  email: string;
+  username: string;
   name: string;
   role: "user" | "admin";
   status: UserStatus;
   storage_quota_bytes: number;
   storage_used_bytes: number;
+  /** 비밀번호를 서버 .env로 관리하는 관리자 계정 (/auth/me에서만) */
+  password_managed?: boolean;
   created_at: string;
   last_login_at: string | null;
 }
@@ -99,7 +101,7 @@ export interface Job {
   finished_at: string | null;
   deleted_at: string | null;
   queue_position: number | null;
-  user: { id: string; email: string; name: string } | null;
+  user: { id: string; username: string; name: string } | null;
 }
 
 export interface JobDetail extends Job {
@@ -134,7 +136,7 @@ export interface Limits {
 export interface AuditLog {
   id: number;
   actor_id: string | null;
-  actor_email: string | null;
+  actor_username: string | null;
   action: string;
   target_type: string | null;
   target_id: string | null;

@@ -5,19 +5,29 @@ from app.tests.conftest import PASSWORD, login, make_user, new_client
 
 def test_signup_creates_pending_user(client):
     res = client.post("/api/auth/signup", json={
-        "email": "New@Example.com", "password": "abcd1234", "name": "새회원",
+        "username": "NewUser1", "password": "abcd1234", "name": "새회원",
         "signup_note": "블로그용", "agree_terms": True, "agree_privacy": True,
     })
     assert res.status_code == 201
-    res = login(client, "new@example.com", "abcd1234")
+    res = login(client, "newuser1", "abcd1234")
     assert res.status_code == 403
     assert res.json()["error"]["code"] == "ACCOUNT_PENDING"
+
+
+@pytest.mark.parametrize("username", ["a@example.com", "1abcd", "abc", "a" * 21, "ab_cd"])
+def test_signup_username_rules(client, username):
+    """아이디는 영문 소문자로 시작하는 4~20자 영문·숫자 — 이메일 형태는 새로 만들 수 없다"""
+    res = client.post("/api/auth/signup", json={
+        "username": username, "password": "abcd1234", "name": "a",
+        "agree_terms": True, "agree_privacy": True,
+    })
+    assert res.status_code == 422
 
 
 @pytest.mark.parametrize("password", ["short1", "onlyletters", "12345678"])
 def test_signup_password_rules(client, password):
     res = client.post("/api/auth/signup", json={
-        "email": "a@example.com", "password": password, "name": "a",
+        "username": "auser", "password": password, "name": "a",
         "agree_terms": True, "agree_privacy": True,
     })
     assert res.status_code == 422
@@ -25,16 +35,16 @@ def test_signup_password_rules(client, password):
 
 def test_signup_requires_agreement(client):
     res = client.post("/api/auth/signup", json={
-        "email": "a@example.com", "password": "abcd1234", "name": "a",
+        "username": "auser", "password": "abcd1234", "name": "a",
         "agree_terms": True, "agree_privacy": False,
     })
     assert res.status_code == 422
 
 
-def test_signup_duplicate_email(client):
-    make_user("dup@example.com")
+def test_signup_duplicate_username(client):
+    make_user("dupuser")
     res = client.post("/api/auth/signup", json={
-        "email": "DUP@example.com", "password": "abcd1234", "name": "a",
+        "username": "DUPUSER", "password": "abcd1234", "name": "a",
         "agree_terms": True, "agree_privacy": True,
     })
     assert res.status_code == 409
@@ -68,7 +78,7 @@ def test_login_approved_success_and_me(client):
     assert "httponly" in cookie and "samesite=strict" in cookie
     me = client.get("/api/auth/me")
     assert me.status_code == 200
-    assert me.json()["email"] == "ok@example.com"
+    assert me.json()["username"] == "ok@example.com"
 
 
 def test_unauthenticated_requests_rejected(client):
@@ -116,4 +126,26 @@ def test_csrf_origin_check(user_client):
     assert res.status_code == 403
     c = new_client()
     c.headers.pop("Origin")
-    assert c.post("/api/auth/login", json={"email": "x@example.com", "password": "x"}).status_code == 403
+    assert c.post("/api/auth/login", json={"username": "x@example.com", "password": "x"}).status_code == 403
+
+
+def test_managed_admin_password(client, monkeypatch):
+    """관리자 비밀번호는 .env가 기준 — 화면에서 바꿀 수 없고, 기동할 때 .env 값으로 맞춘다"""
+    from app.config import settings
+    from app.db import SessionLocal
+    from app.services.auth_service import ensure_admin
+
+    monkeypatch.setattr(settings, "admin_username", "admin")
+    monkeypatch.setattr(settings, "admin_password", "AdminPass123")
+    with SessionLocal() as db:
+        assert ensure_admin(db) == "created"
+        assert ensure_admin(db) is None
+    assert login(client, "admin", "AdminPass123").status_code == 200
+    res = client.patch("/api/auth/password", json={"current_password": "AdminPass123", "new_password": "Other1234"})
+    assert res.status_code == 409
+
+    monkeypatch.setattr(settings, "admin_password", "Changed123")
+    with SessionLocal() as db:
+        assert ensure_admin(db) == "synced"
+    assert client.get("/api/auth/me").status_code == 401  # 예전 비밀번호로 만든 세션은 종료
+    assert login(new_client(), "admin", "Changed123").status_code == 200

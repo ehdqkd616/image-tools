@@ -70,7 +70,7 @@ def list_jobs(db: Session, stmt: Select, page: int, page_size: int, with_user: b
 def job_out(job: Job, user: User | None = None, **extra) -> JobOut:
     out = JobOut.model_validate(job)
     if user is not None:
-        out.user = JobUser(id=user.id, email=user.email, name=user.name)
+        out.user = JobUser(id=user.id, username=user.username, name=user.name)
     for k, v in extra.items():
         setattr(out, k, v)
     return out

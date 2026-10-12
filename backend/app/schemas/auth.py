@@ -2,7 +2,7 @@ import re
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 def _check_password(v: str) -> str:
@@ -13,8 +13,12 @@ def _check_password(v: str) -> str:
     return v
 
 
+# 아이디: 영문 소문자로 시작하는 4~20자 영문·숫자 (모든 프로젝트 공통)
+USERNAME_RE = re.compile(r"^[a-z][a-z0-9]{3,19}$")
+
+
 class SignupIn(BaseModel):
-    email: EmailStr
+    username: str
     password: str
     name: str = Field(min_length=1, max_length=50)
     signup_note: str | None = Field(default=None, max_length=1000)
@@ -22,6 +26,14 @@ class SignupIn(BaseModel):
     agree_privacy: bool
 
     _pw = field_validator("password")(_check_password)
+
+    @field_validator("username")
+    @classmethod
+    def _check_username(cls, v: str) -> str:
+        v = v.strip().lower()
+        if not USERNAME_RE.fullmatch(v):
+            raise ValueError("아이디는 영문 소문자로 시작하는 4~20자 영문·숫자입니다.")
+        return v
 
     @field_validator("name")
     @classmethod
@@ -33,7 +45,8 @@ class SignupIn(BaseModel):
 
 
 class LoginIn(BaseModel):
-    email: EmailStr
+    # 형식은 검사하지 않는다 — 예전 가입자는 이메일 형태 아이디를 그대로 쓴다
+    username: str = Field(max_length=320)
     password: str = Field(max_length=128)
 
 
@@ -48,7 +61,7 @@ class UserOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: uuid.UUID
-    email: str
+    username: str
     name: str
     role: str
     status: str
@@ -56,3 +69,4 @@ class UserOut(BaseModel):
     storage_used_bytes: int
     created_at: datetime
     last_login_at: datetime | None
+    password_managed: bool = False

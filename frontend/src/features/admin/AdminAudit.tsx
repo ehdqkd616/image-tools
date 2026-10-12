@@ -58,7 +58,7 @@ export function AdminAudit() {
             </option>
           ))}
         </select>
-        <input type="search" className="input sm:max-w-xs" placeholder="행위자 이메일" value={actor} onChange={(e) => (setActor(e.target.value), setPage(1))} aria-label="행위자" />
+        <input type="search" className="input sm:max-w-xs" placeholder="행위자 아이디" value={actor} onChange={(e) => (setActor(e.target.value), setPage(1))} aria-label="행위자" />
       </div>
       <ErrorBox error={error} />
       {isLoading ? (
@@ -82,7 +82,7 @@ export function AdminAudit() {
                 {items.map((l) => (
                   <tr key={l.id}>
                     <td className="p-3 whitespace-nowrap text-slate-600 tabular-nums">{formatDate(l.created_at)}</td>
-                    <td className="p-3">{l.actor_email ?? (typeof l.detail?.email === "string" ? l.detail.email : "-")}</td>
+                    <td className="p-3">{l.actor_username ?? (typeof l.detail?.username === "string" ? l.detail.username : typeof l.detail?.email === "string" ? l.detail.email : "-")}</td>
                     <td className="p-3">{describeAction(l)}</td>
                     <td className="p-3 font-mono text-xs text-slate-500">
                       {l.target_type ? `${l.target_type}:${l.target_id?.slice(0, 8) ?? ""}` : "-"}
@@ -98,7 +98,7 @@ export function AdminAudit() {
               <li key={l.id} className="card p-3 text-sm">
                 <div className="font-medium">{describeAction(l)}</div>
                 <div className="text-xs text-slate-500">
-                  {formatDate(l.created_at)} · {l.actor_email ?? (typeof l.detail?.email === "string" ? l.detail.email : "-")} · {l.ip ?? "-"}
+                  {formatDate(l.created_at)} · {l.actor_username ?? (typeof l.detail?.username === "string" ? l.detail.username : typeof l.detail?.email === "string" ? l.detail.email : "-")} · {l.ip ?? "-"}
                 </div>
               </li>
             ))}

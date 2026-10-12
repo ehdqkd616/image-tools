@@ -93,7 +93,7 @@ class AssetOut(BaseModel):
 
 class JobUser(BaseModel):
     id: uuid.UUID
-    email: str
+    username: str
     name: str
 
 

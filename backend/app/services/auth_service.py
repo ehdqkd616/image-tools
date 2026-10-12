@@ -42,16 +42,16 @@ def _token_hash(token: str) -> str:
 
 # --- 로그인 시도 제한 ---------------------------------------------------------
 
-def _fail_keys(email: str, ip: str | None) -> list[str]:
-    keys = [f"loginfail:email:{email}"]
+def _fail_keys(username: str, ip: str | None) -> list[str]:
+    keys = [f"loginfail:user:{username}"]
     if ip:
         keys.append(f"loginfail:ip:{ip}")
     return keys
 
 
-def check_login_locked(email: str, ip: str | None) -> None:
+def check_login_locked(username: str, ip: str | None) -> None:
     r = get_redis()
-    for key in _fail_keys(email, ip):
+    for key in _fail_keys(username, ip):
         count = int(r.get(key) or 0)
         if count >= settings.login_max_failures:
             ttl = max(r.ttl(key), 1)
@@ -63,16 +63,47 @@ def check_login_locked(email: str, ip: str | None) -> None:
             )
 
 
-def record_login_failure(email: str, ip: str | None) -> None:
+def record_login_failure(username: str, ip: str | None) -> None:
     r = get_redis()
-    for key in _fail_keys(email, ip):
+    for key in _fail_keys(username, ip):
         count = r.incr(key)
         if count == 1:
             r.expire(key, settings.login_lock_minutes * 60)
 
 
-def clear_login_failures(email: str) -> None:
-    get_redis().delete(f"loginfail:email:{email}")
+def clear_login_failures(username: str) -> None:
+    get_redis().delete(f"loginfail:user:{username}")
+
+
+# --- .env 관리자 계정 ------------------------------------------------------------
+
+def is_managed_admin(user: User) -> bool:
+    """비밀번호를 .env의 ADMIN_PASSWORD로 관리하는 관리자 계정인지"""
+    return user.username == settings.admin_username.strip().lower()
+
+
+def ensure_admin(db: Session) -> str | None:
+    """기동할 때마다 .env의 ADMIN_USERNAME(기본 admin)/ADMIN_PASSWORD로 관리자 계정을 맞춘다.
+    없으면 만들고, 있으면 관리자·승인 상태와 비밀번호를 .env 값으로 되돌린다 — 비밀번호는 .env가 기준."""
+    username, password = settings.admin_username.strip().lower(), settings.admin_password
+    if not username or not password:
+        return None
+    user = db.scalar(select(User).where(User.username == username))
+    if user is None:
+        db.add(User(username=username, name="관리자", password_hash=hash_password(password),
+                    role="admin", status="approved", approved_at=utcnow()))
+        db.commit()
+        return "created"
+    same_password = verify_password(user.password_hash, password)
+    if same_password and user.role == "admin" and user.status == "approved":
+        return None
+    user.role, user.status = "admin", "approved"
+    user.approved_at = user.approved_at or utcnow()
+    if not same_password:
+        user.password_hash = hash_password(password)
+        revoke_user_sessions(db, user.id)  # 예전 비밀번호로 만든 세션 종료
+    db.commit()
+    return "synced"
 
 
 # --- 세션 ---------------------------------------------------------------------

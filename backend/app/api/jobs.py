@@ -66,7 +66,7 @@ def job_detail(db, job: Job, viewer: User) -> JobDetailOut:
     if viewer.is_admin and job.user_id != viewer.id:
         owner = db.get(User, job.user_id)
         if owner:
-            detail.user = JobUser(id=owner.id, email=owner.email, name=owner.name)
+            detail.user = JobUser(id=owner.id, username=owner.username, name=owner.name)
     return detail
 
 
