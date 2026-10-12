@@ -14,9 +14,9 @@ def test_signup_creates_pending_user(client):
     assert res.json()["error"]["code"] == "ACCOUNT_PENDING"
 
 
-@pytest.mark.parametrize("username", ["a@example.com", "1abcd", "abc", "a" * 21, "ab_cd"])
+@pytest.mark.parametrize("username", ["a@example.com", "ab", "a" * 33, "ab cd", "한글아이디"])
 def test_signup_username_rules(client, username):
-    """아이디는 영문 소문자로 시작하는 4~20자 영문·숫자 — 이메일 형태는 새로 만들 수 없다"""
+    """아이디는 영문·숫자·_·- 3~32자 — 이메일 형태는 새로 만들 수 없다"""
     res = client.post("/api/auth/signup", json={
         "username": username, "password": "abcd1234", "name": "a",
         "agree_terms": True, "agree_privacy": True,
@@ -24,7 +24,7 @@ def test_signup_username_rules(client, username):
     assert res.status_code == 422
 
 
-@pytest.mark.parametrize("password", ["short1", "onlyletters", "12345678"])
+@pytest.mark.parametrize("password", ["short1", "1234567"])
 def test_signup_password_rules(client, password):
     res = client.post("/api/auth/signup", json={
         "username": "auser", "password": password, "name": "a",
@@ -39,6 +39,15 @@ def test_signup_requires_agreement(client):
         "agree_terms": True, "agree_privacy": False,
     })
     assert res.status_code == 422
+
+
+@pytest.mark.parametrize("username", ["abc", "user_name-01", "A" * 32])
+def test_signup_username_allowed(client, username):
+    res = client.post("/api/auth/signup", json={
+        "username": username, "password": "12345678", "name": "a",
+        "agree_terms": True, "agree_privacy": True,
+    })
+    assert res.status_code == 201
 
 
 def test_signup_duplicate_username(client):
@@ -135,7 +144,6 @@ def test_managed_admin_password(client, monkeypatch):
     from app.db import SessionLocal
     from app.services.auth_service import ensure_admin
 
-    monkeypatch.setattr(settings, "admin_username", "admin")
     monkeypatch.setattr(settings, "admin_password", "AdminPass123")
     with SessionLocal() as db:
         assert ensure_admin(db) == "created"

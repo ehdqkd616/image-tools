@@ -77,16 +77,19 @@ def clear_login_failures(username: str) -> None:
 
 # --- .env 관리자 계정 ------------------------------------------------------------
 
+ADMIN_USERNAME = "admin"  # 모든 프로젝트 공통 관리자 아이디
+
+
 def is_managed_admin(user: User) -> bool:
-    """비밀번호를 .env의 ADMIN_PASSWORD로 관리하는 관리자 계정인지"""
-    return user.username == settings.admin_username.strip().lower()
+    """비밀번호를 .env의 ADMIN_PASSWORD로 관리하는 공통 관리자 계정(admin)인지"""
+    return user.username == ADMIN_USERNAME
 
 
 def ensure_admin(db: Session) -> str | None:
-    """기동할 때마다 .env의 ADMIN_USERNAME(기본 admin)/ADMIN_PASSWORD로 관리자 계정을 맞춘다.
+    """기동할 때마다 .env의 ADMIN_PASSWORD로 공통 관리자 계정 admin을 맞춘다.
     없으면 만들고, 있으면 관리자·승인 상태와 비밀번호를 .env 값으로 되돌린다 — 비밀번호는 .env가 기준."""
-    username, password = settings.admin_username.strip().lower(), settings.admin_password
-    if not username or not password:
+    username, password = ADMIN_USERNAME, settings.admin_password
+    if not password:
         return None
     user = db.scalar(select(User).where(User.username == username))
     if user is None:

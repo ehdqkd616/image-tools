@@ -72,7 +72,7 @@ export function LoginPage() {
   );
 }
 
-const PW_RULE = /^(?=.*[A-Za-z])(?=.*\d).{8,128}$/;
+const PW_RULE = /^.{8,128}$/;
 
 export function SignupPage() {
   const navigate = useNavigate();
@@ -98,7 +98,7 @@ export function SignupPage() {
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
-    if (!PW_RULE.test(form.password)) return setLocalError("비밀번호는 8자 이상이며 영문과 숫자를 모두 포함해야 합니다.");
+    if (!PW_RULE.test(form.password)) return setLocalError("비밀번호는 8자 이상이어야 합니다.");
     if (form.password !== form.password2) return setLocalError("비밀번호 확인이 일치하지 않습니다.");
     if (!form.agree_terms || !form.agree_privacy) return setLocalError("이용약관과 개인정보 처리방침에 동의해 주세요.");
     setLocalError(null);
@@ -115,16 +115,16 @@ export function SignupPage() {
           <label className="label" htmlFor="su-username">
             아이디
           </label>
-          <input id="su-username" autoComplete="username" autoCapitalize="none" spellCheck={false} required maxLength={20} className="input"
+          <input id="su-username" autoComplete="username" autoCapitalize="none" spellCheck={false} required maxLength={32} className="input"
             value={form.username} onChange={(e) => set({ username: e.target.value.toLowerCase() })} />
-          <p className="mt-1 text-xs text-slate-500">영문 소문자로 시작하는 4~20자 영문·숫자</p>
+          <p className="mt-1 text-xs text-slate-500">영문·숫자·_·- 조합 3~32자</p>
         </div>
         <div>
           <label className="label" htmlFor="su-pw">
             비밀번호
           </label>
           <input id="su-pw" type="password" autoComplete="new-password" required className="input" value={form.password} onChange={(e) => set({ password: e.target.value })} />
-          <p className="mt-1 text-xs text-slate-500">8자 이상, 영문과 숫자를 모두 포함</p>
+          <p className="mt-1 text-xs text-slate-500">8자 이상</p>
         </div>
         <div>
           <label className="label" htmlFor="su-pw2">

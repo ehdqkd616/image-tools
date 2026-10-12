@@ -25,7 +25,7 @@ export function AccountPage() {
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
-    if (!/^(?=.*[A-Za-z])(?=.*\d).{8,128}$/.test(form.next)) return setLocalError("새 비밀번호는 8자 이상이며 영문과 숫자를 모두 포함해야 합니다.");
+    if (!/^.{8,128}$/.test(form.next)) return setLocalError("새 비밀번호는 8자 이상이어야 합니다.");
     if (form.next !== form.next2) return setLocalError("새 비밀번호 확인이 일치하지 않습니다.");
     setLocalError(null);
     change.mutate();
@@ -59,7 +59,7 @@ export function AccountPage() {
         <h2 className="mb-4 font-bold">비밀번호 변경</h2>
         <form className="space-y-3" onSubmit={submit}>
           <input type="password" className="input" placeholder="현재 비밀번호" autoComplete="current-password" aria-label="현재 비밀번호" value={form.current} onChange={(e) => setForm({ ...form, current: e.target.value })} required />
-          <input type="password" className="input" placeholder="새 비밀번호 (8자 이상, 영문+숫자)" autoComplete="new-password" aria-label="새 비밀번호" value={form.next} onChange={(e) => setForm({ ...form, next: e.target.value })} required />
+          <input type="password" className="input" placeholder="새 비밀번호 (8자 이상)" autoComplete="new-password" aria-label="새 비밀번호" value={form.next} onChange={(e) => setForm({ ...form, next: e.target.value })} required />
           <input type="password" className="input" placeholder="새 비밀번호 확인" autoComplete="new-password" aria-label="새 비밀번호 확인" value={form.next2} onChange={(e) => setForm({ ...form, next2: e.target.value })} required />
           <ErrorBox error={localError ?? change.error} />
           <button className="btn-primary w-full sm:w-auto" disabled={change.isPending}>

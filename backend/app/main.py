@@ -8,6 +8,7 @@ from app.api import admin, assets, auth, jobs
 from app.config import settings
 from app.db import SessionLocal
 from app.errors import install_error_handlers
+from app.services import auth_service
 from app.services.auth_service import ensure_admin
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -54,7 +55,7 @@ def _sync_admin() -> None:
     with SessionLocal() as db:
         result = ensure_admin(db)
     if result:
-        logging.getLogger("app").info("관리자 계정 %s: %s", "생성" if result == "created" else "동기화", settings.admin_username)
+        logging.getLogger("app").info("관리자 계정 %s: %s", "생성" if result == "created" else "동기화", auth_service.ADMIN_USERNAME)
 
 
 @app.get("/api/health")

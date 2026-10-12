@@ -1,13 +1,12 @@
 """관리 명령
 
     python -m app.cli create-admin --username admin --name 관리자 [--password ...]
-    (보통은 필요 없다 — API가 기동할 때 .env의 ADMIN_USERNAME/ADMIN_PASSWORD로 admin을 맞춘다)
+    (보통은 필요 없다 — API가 기동할 때 .env의 ADMIN_PASSWORD로 admin을 맞춘다)
     python -m app.cli cleanup
 """
 
 import argparse
 import getpass
-import re
 import sys
 
 from sqlalchemy import func, select
@@ -24,8 +23,8 @@ def create_admin(username: str, name: str, password: str | None) -> None:
         password = getpass.getpass("비밀번호: ")
         if getpass.getpass("비밀번호 확인: ") != password:
             sys.exit("비밀번호가 일치하지 않습니다.")
-    if len(password) < 8 or not re.search(r"[A-Za-z]", password) or not re.search(r"\d", password):
-        sys.exit("비밀번호는 8자 이상이며 영문과 숫자를 모두 포함해야 합니다.")
+    if len(password) < 8:
+        sys.exit("비밀번호는 8자 이상이어야 합니다.")
     with SessionLocal() as db:
         user = db.scalar(select(User).where(func.lower(User.username) == username))
         if user:

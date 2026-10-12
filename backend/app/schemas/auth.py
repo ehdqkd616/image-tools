@@ -6,15 +6,15 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 def _check_password(v: str) -> str:
-    if len(v) < 8 or not re.search(r"[A-Za-z]", v) or not re.search(r"\d", v):
-        raise ValueError("비밀번호는 8자 이상이며 영문과 숫자를 모두 포함해야 합니다.")
+    if len(v) < 8:
+        raise ValueError("비밀번호는 8자 이상이어야 합니다.")
     if len(v) > 128:
         raise ValueError("비밀번호가 너무 깁니다.")
     return v
 
 
-# 아이디: 영문 소문자로 시작하는 4~20자 영문·숫자 (모든 프로젝트 공통)
-USERNAME_RE = re.compile(r"^[a-z][a-z0-9]{3,19}$")
+# 아이디: 영문·숫자·_·- 3~32자 (모든 프로젝트 공통 규칙). 대소문자는 구분하지 않도록 소문자로 저장
+USERNAME_RE = re.compile(r"^[a-z0-9_-]{3,32}$")
 
 
 class SignupIn(BaseModel):
@@ -32,7 +32,7 @@ class SignupIn(BaseModel):
     def _check_username(cls, v: str) -> str:
         v = v.strip().lower()
         if not USERNAME_RE.fullmatch(v):
-            raise ValueError("아이디는 영문 소문자로 시작하는 4~20자 영문·숫자입니다.")
+            raise ValueError("아이디는 영문, 숫자, _, - 조합 3~32자여야 합니다.")
         return v
 
     @field_validator("name")
