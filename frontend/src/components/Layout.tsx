@@ -125,7 +125,7 @@ export function AuthLayout({ children }: { children: ReactNode }) {
 }
 
 /** 로그인 필요. 세션이 만료되면 로그인 화면으로 */
-export function RequireAuth({ admin = false }: { admin?: boolean }) {
+export function RequireAuth({ admin = false, fallback }: { admin?: boolean; fallback?: ReactNode }) {
   const { data: me, isLoading } = useMe();
   const location = useLocation();
   const qc = useQueryClient();
@@ -137,6 +137,7 @@ export function RequireAuth({ admin = false }: { admin?: boolean }) {
   }, [qc]);
 
   if (isLoading) return <PageLoader />;
+  if (!me && fallback) return <>{fallback}</>;
   if (!me) return <Navigate to="/login" replace state={{ from: location.pathname + location.search }} />;
   if (admin && me.role !== "admin") return <Navigate to="/" replace />;
   return <Outlet />;

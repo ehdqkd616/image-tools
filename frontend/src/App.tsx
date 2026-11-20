@@ -1,4 +1,5 @@
-import { Route, Routes } from "react-router";
+import { Link, Route, Routes } from "react-router";
+import Landing from "./components/Landing";
 import { AppLayout, GuestOnly, RequireAuth } from "./components/Layout";
 import { AccountPage } from "./features/account/AccountPage";
 import { AdminAudit } from "./features/admin/AdminAudit";
@@ -26,9 +27,15 @@ export function App() {
       <Route path="/terms" element={<TermsPage />} />
       <Route path="/privacy" element={<PrivacyPage />} />
 
-      <Route element={<RequireAuth />}>
+      {/* 홈(/): 로그인 전에는 서비스 소개, 로그인 후에는 기존 홈 */}
+      <Route element={<RequireAuth fallback={<Landing LinkComponent={Link} />} />}>
         <Route element={<AppLayout />}>
           <Route index element={<HomePage />} />
+        </Route>
+      </Route>
+
+      <Route element={<RequireAuth />}>
+        <Route element={<AppLayout />}>
           <Route path="/upscale" element={<UpscalePage />} />
           <Route path="/resize" element={<ResizePage />} />
           <Route path="/compress" element={<CompressPage />} />
